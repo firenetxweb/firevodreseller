@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIREVOD Panel Pro</title>
+
+    <!-- SDK de Firebase Web (Compat Mode) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- Script de Autenticación de Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpJChysV6vKJwtVUJf_tm2lV0xOiSiMc4",
+            authDomain: "firevodpanel.firebaseapp.com",
+            databaseURL: "https://firevodpanel-default-rtdb.firebaseio.com",
+            projectId: "firevodpanel",
+            storageBucket: "firevodpanel.firebasestorage.app",
+            messagingSenderId: "411147446371",
+            appId: "1:411147446371:web:76cc2a6ac2479638983056"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+    </script>
+
+    <style>
+        :root {
+            --bg-dark: #1a1a27;
+            --bg-card: #212130;
+            --sidebar-bg: #151521;
+            --accent: #7367f0;
+            --accent-hover: #5e50ee;
+            --text-main: #d0d4f1;
+            --text-muted: #7982a9;
+            --border-color: #2b2b40;
+            --success: #28c76f;
+            --warning: #ff9f43;
+            --danger: #ea5455;
+            --info: #00cfe8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: all 0.3s; }
+        .brand { padding: 24px 20px; font-size: 1.25rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); }
+        .nav-menu { list-style: none; padding: 20px 0; }
+        .nav-item a { display: flex; align-items: center; padding: 14px 24px; color: var(--text-muted); text-decoration: none; font-weight: 500; transition: all 0.3s; cursor: pointer; }
+        .nav-item a:hover, .nav-item.active a { color: #fff; background-color: rgba(115, 103, 240, 0.12); border-left: 4px solid var(--accent); }
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; transition: all 0.3s; }
+        .navbar { height: 70px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .container { padding: 30px; overflow-y: auto; flex-grow: 1; }
+        .content-view { display: none; }
+        .content-view.active { display: block; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .metric-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
+        .metric-card span { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; }
+        .metric-card h3 { font-size: 1.8rem; margin-top: 8px; color: #fff; }
+        .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; margin-bottom: 25px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .file-controls { display: flex; gap: 12px; align-items: center; }
+        .btn-upload, .btn-primary { background-color: var(--accent); color: #fff; padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; }
+        .btn-upload:hover, .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: #32324a; color: var(--text-main); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-secondary:hover { background-color: #3d3d5c; }
+        .btn-warning { background-color: rgba(255, 159, 67, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .btn-warning:hover { background-color: rgba(255, 159, 67, 0.3); }
+        .btn-danger { background-color: rgba(234, 84, 85, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background-color: rgba(234, 84, 85, 0.3); }
+        .btn-success { background-color: rgba(40, 199, 111, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .btn-success:hover { background-color: rgba(40, 199, 111, 0.3); }
+        input[type="file"] { display: none; }
+        .form-control, .search-input, select, textarea { background-color: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; outline: none; }
+        .form-control:focus, .search-input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .input-group { display: flex; gap: 8px; }
+        .checkbox-group { display: flex; gap: 20px; flex-wrap: wrap; background: var(--bg-dark); padding: 12px 15px; border-radius: 6px; border: 1px solid var(--border-color); }
+        .checkbox-group label { display: flex; align-items: center; gap: 8px; color: var(--text-main); cursor: pointer; font-weight: normal; font-size: 0.9rem; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background-color: var(--bg-dark); color: var(--text-muted); padding: 14px 16px; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; word-break: break-all; }
+        tbody tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin: 2px 0; text-align: center; }
+        .badge-success { background-color: rgba(40, 199, 111, 0.12); color: var(--success); }
+        .badge-info { background-color: rgba(0, 207, 232, 0.12); color: var(--info); }
+        .badge-warning { background-color: rgba(255, 159, 67, 0.12); color: var(--warning); }
+        .badge-danger { background-color: rgba(234, 84, 85, 0.12); color: var(--danger); }
+        .pass-cell { font-family: monospace; letter-spacing: 1px; color: var(--warning); }
+        .pin-cell { font-family: monospace; font-weight: bold; color: var(--info); }
+        .server-tag { color: var(--info); }
+        .section-divider { grid-column: 1 / -1; border-top: 1px dashed var(--border-color); margin: 10px 0 5px 0; padding-top: 15px; font-weight: bold; color: var(--accent); font-size: 0.95rem; }
+
+        .hidden { display: none !important; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-dark); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: var(--bg-card); padding: 40px; border-radius: 10px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-box h2 { color: var(--accent); margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de Login -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>⚡ FIREVOD PANEL</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Inicia sesión (Admin o Reseller)</p>
+            <form id="loginForm" onsubmit="iniciarSesion(event)">
+                <div class="form-group" style="text-align: left; margin-bottom: 15px;">
+                    <label>Usuario o Correo Admin</label>
+                    <input type="text" id="loginEmail" class="form-control" required placeholder="admin@tupanel.com o usuario_reseller">
+                </div>
+                <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPass" class="form-control" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="btnLogin" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px;">Ingresar al Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menú Lateral -->
+    <aside class="sidebar hidden" id="sidebar">
+        <div class="brand">⚡ FIREVOD v2.9 <br><small id="role-badge" style="font-size:0.7rem; color:var(--success); margin-left: 5px;">[Admin]</small></div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-target="view-dashboard"><a onclick="cambiarVista('view-dashboard', this)">📊 Dashboard</a></li>
+            <li class="nav-item" data-target="view-lines"><a onclick="cambiarVista('view-lines', this)">👥 Crear / Gestión Líneas</a></li>
+            <li class="nav-item" id="nav-item-m3u-lists" data-target="view-m3u-lists"><a onclick="cambiarVista('view-m3u-lists', this)">📝 Listas M3U</a></li>
+            <li class="nav-item" id="nav-item-resellers" data-target="view-resellers"><a onclick="cambiarVista('view-resellers', this)">👔 Gestión Resellers</a></li>
+            <li class="nav-item" id="nav-item-servers" data-target="view-servers"><a onclick="cambiarVista('view-servers', this)">🖥️ Servidores Xtream</a></li>
+            <li class="nav-item" id="nav-item-settings" data-target="view-settings"><a onclick="cambiarVista('view-settings', this)">⚙️ Ajustes</a></li>
+            <li class="nav-item" style="margin-top: 30px;"><a onclick="cerrarSesion()" style="color: var(--danger);">🚪 Cerrar Sesión</a></li>
+        </ul>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <div class="main-wrapper hidden" id="main-wrapper">
+        <header class="navbar">
+            <div id="nav-title" style="font-weight: 600;">Panel de Administración / Dashboard</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Estado: <span style="color: var(--success);" id="firebase-status">Conectando...</span></div>
+        </header>
+
+        <main class="container">
+            
+            <!-- VISTA DASHBOARD -->
+            <div id="view-dashboard" class="content-view active">
+                <div class="metrics-grid">
+                    <div class="metric-card" id="stat-total-card">
+                        <span id="stat-total-title">Cuentas Xtream Cargadas</span>
+                        <h3 id="stat-total">0</h3>
+                    </div>
+                    <div class="metric-card">
+                        <span>Líneas de Clientes Creadas</span>
+                        <h3 id="stat-clientes">0</h3>
+                    </div>
+                    <div class="metric-card" id="stat-servers-card">
+                        <span>Servidores Detectados</span>
+                        <h3 id="stat-servers">0</h3>
+                    </div>
+                </div>
+
+                <section class="panel" id="admin-dashboard-upload">
+                    <div class="panel-header">
+                        <div class="file-controls">
+                            <label for="fileLoader" class="btn-upload">📂 Cargar Lista Xtream (.txt)</label>
+                            <input type="file" id="fileLoader" accept=".txt">
+                            <span id="file-name" style="color: var(--text-muted); font-size: 0.85rem;">Ningún archivo seleccionado</span>
+                        </div>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar usuario, servidor o estado...">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Usuario Xtream</th>
+                                    <th>Contraseña</th>
+                                    <th>URL / Servidor</th>
+                                    <th>Vencimiento</th>
+                                    <th>Conexiones</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountsTable">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                        Carga un archivo de texto con tus cuentas Xtream.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA LÍNEAS / CLIENTES -->
+            <div id="view-lines" class="content-view">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3 id="form-title-text">➕ Crear Nueva Línea Cliente</h3>
+                        <button type="button" id="btnCancelarEdicion" class="btn-secondary" style="display: none;" onclick="resetearFormulario()">Cancelar Edición</button>
+                    </div>
+                    
+                    <form id="createLineForm" onsubmit="guardarOActualizarLinea(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Usuario Cliente</label>
+                                <div class="input-group">
+                                    <input type="text" id="newUser" class="form-control" placeholder="Ej. cliente_89" required>
+                                    <button type="button" class="btn-secondary" onclick="generarUsuarioAleatorio()">🎲</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <div class="input-group">
+                                    <input type="text" id="newPass" class="form-control" placeholder="Ej. pass_902" required>
+                                    <button type="button" class="btn-secondary" onclick="generarPasswordAleatorio()">🎲</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Código de Acceso / PIN Único</label>
+                                <div class="input-group">
+                                    <input type="text" id="newPin" class="form-control pin-cell" required>
+                                    <button type="button" class="btn-secondary" onclick="generarPinAcceso()">⚡ Generar</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Vencimiento <span id="label-duracion-nota" style="font-size: 0.75rem; color: var(--warning);"></span></label>
+                                <div class="input-group">
+                                    <select id="newDuration" onchange="actualizarFechaManual()" style="flex: 1;">
+                                        <option value="keep" id="opt-keep" style="display: none;">🔒 Mantener fecha actual (Sin costo)</option>
+                                        <option value="2h">2 Horas de Prueba (Gratis)</option>
+                                        <option value="1m" selected>1 Mes (1 Crédito)</option>
+                                        <option value="3m">3 Meses (3 Créditos)</option>
+                                        <option value="6m">6 Meses (6 Créditos)</option>
+                                        <option value="12m">12 Meses (12 Créditos)</option>
+                                    </select>
+                                    <input type="datetime-local" id="manualVencimiento" class="form-control" style="flex: 1;" required>
+                                </div>
+                            </div>
+
+                            <!-- Selector de Lista M3U (Visible para todos) -->
+                            <div class="form-group full-width">
+                                <label style="color: var(--info);">📂 Seleccionar Lista M3U (Carpeta de Playlist)</label>
+                                <select id="selectedM3uListClient" class="form-control">
+                                    <option value="">-- Ninguna (Usar servidor por defecto) --</option>
+                                </select>
+                            </div>
+
+                            <!-- SECCIÓN ADMIN: XTREAM Y M3U AVANZADO -->
+                            <div id="admin-advanced-sections" style="grid-column: 1 / -1; display: contents;">
+                                <!-- CREDENCIALES XTREAM -->
+                                <div class="section-divider">🌐 Credenciales API Xtream (Sólo Administrador)</div>
+
+                                <div class="form-group full-width">
+                                    <label style="color: var(--info);">🔄 Servidor Xtream Guardado (Opcional)</label>
+                                    <select id="serverSelect" class="form-control" onchange="inyectarServidorDropdown()">
+                                        <option value="">-- Escribe manualmente abajo o selecciona uno de la lista --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>URL del Servidor Xtream</label>
+                                    <input type="text" id="newServerUrl" class="form-control" placeholder="Ej. http://servidor.com:8080">
+                                </div>
+                                <div class="form-group">
+                                    <label>Usuario Xtream</label>
+                                    <input type="text" id="newXtreamUser" class="form-control" placeholder="Ej. usuario_xtream">
+                                </div>
+                                <div class="form-group">
+                                    <label>Contraseña Xtream</label>
+                                    <input type="text" id="newXtreamPass" class="form-control" placeholder="Ej. pass_xtream">
+                                </div>
+
+                                <!-- CUENTAS M3U Y FILTROS -->
+                                <div class="section-divider">📺 Cuentas Adicionales y Listas M3U</div>
+
+                                <div class="form-group full-width">
+                                    <label>🔗 URL de Dropbox Principal</label>
+                                    <input type="text" id="newDropboxUrl" class="form-control" placeholder="Ej. https://.../lista.m3u?dl=0">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Contenido M3U Crudo Principal</label>
+                                    <textarea id="newM3u" class="form-control" rows="2" placeholder="Pega aquí el contenido M3U crudo..."></textarea>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>🚫 Filtros Ocultamiento - <strong>Principal</strong></label>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" id="hideLiveMain"> Ocultar TV en Vivo</label>
+                                        <label><input type="checkbox" id="hideVodMain"> Ocultar Películas</label>
+                                        <label><input type="checkbox" id="hideSeriesMain"> Ocultar Series</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label>🔗 URL de Dropbox de Respaldo</label>
+                                    <input type="text" id="backupDropboxUrl" class="form-control" placeholder="Ej. https://.../lista_backup.m3u?dl=0">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Contenido M3U Crudo de Respaldo</label>
+                                    <textarea id="backupM3u" class="form-control" rows="2" placeholder="Pega aquí el contenido M3U crudo de respaldo..."></textarea>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>🚫 Filtros Ocultamiento - <strong>Respaldo</strong></label>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" id="hideLiveBackup"> Ocultar TV en Vivo</label>
+                                        <label><input type="checkbox" id="hideVodBackup"> Ocultar Películas</label>
+                                        <label><input type="checkbox" id="hideSeriesBackup"> Ocultar Series</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--info);">
+                                        <input type="checkbox" id="mergeTotalContent" checked> Unir todo el contenido total filtrado de ambas cuentas en una sola lista M3U.
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- FIN SECCIÓN ADMIN -->
+
+                            <div class="section-divider">⚡ Configuración Avanzada de Acceso</div>
+                            
+                            <div class="form-group full-width" style="background: rgba(234, 84, 85, 0.1); padding: 15px; border-radius: 6px; border: 1px solid var(--danger);">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--danger); font-weight: bold;">
+                                    <input type="checkbox" id="bloquearAcceso"> 🚫 BLOQUEAR ACCESO PIN (Denegar inicio de sesión en App FIREVOD IPTV)
+                                </label>
+                            </div>
+
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 12px 18px; border-radius: 6px; margin-top: 10px; flex-wrap: wrap; gap: 10px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted);" id="form-status-msg">
+                                🔄 <strong>Sincronización en Firebase:</strong> Se guarda en tiempo real.
+                            </span>
+                            <button type="submit" id="btnSubmitForm" class="btn-primary">💾 Guardar y Activar Línea</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>📋 Líneas de Clientes</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead id="thead-clients">
+                            </thead>
+                            <tbody id="clientsTable">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 25px;">
+                                        Cargando usuarios desde Firebase...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA LISTAS M3U (Solo Admin) -->
+            <div id="view-m3u-lists" class="content-view">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>➕ Crear / Editar Lista M3U (Pool de Cuentas)</h3>
+                    </div>
+                    <form id="createM3uListForm" onsubmit="guardarListaM3u(event)">
+                        <input type="hidden" id="m3uListId">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label>Nombre de la Lista</label>
+                                <input type="text" id="m3uListName" class="form-control" required placeholder="Ej. Servidores VIP 1">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Notas / Cuentas Xtream (Puedes agregar miles de líneas)</label>
+                                <textarea id="m3uListContent" class="form-control" rows="8" required placeholder="Pega aquí el texto, URLs o cuentas Xtream correspondientes a esta lista..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button type="submit" id="btnGuardarListaM3u" class="btn-primary">💾 Guardar Lista</button>
+                            <button type="button" class="btn-secondary" onclick="resetM3uListForm()">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>📋 Listas Guardadas y Verificación en Vivo</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre de la Lista</th>
+                                    <th>Acciones / Cheker en Vivo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="m3uListsTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- MODAL O CONTENEDOR DE RESULTADO DEL CHECKER EN VIVO -->
+                <section class="panel" id="checkerResultPanel" style="display: none; border: 1px solid var(--accent);">
+                    <div class="panel-header">
+                        <h3 id="checkerTitle">🔍 Reporte de Estado en Vivo</h3>
+                        <button type="button" class="btn-secondary" onclick="cerrarPanelChecker()">✕ Cerrar Reporte</button>
+                    </div>
+                    <div id="checkerSummary" style="margin-bottom: 15px; font-weight: bold;"></div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Usuario Xtream</th>
+                                    <th>Servidor</th>
+                                    <th>Estado Detectado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checkerTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button type="button" id="btnLimpiarListaAuto" class="btn-danger" style="display: none;" onclick="ejecutarLimpiezaLista()">🧹 Limpiar y Borrar Cuentas Vencidas de esta Lista</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA RESELLERS -->
+            <div id="view-resellers" class="content-view">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>➕ Crear / Editar Reseller</h3>
+                    </div>
+                    <form id="createResellerForm" onsubmit="guardarReseller(event)">
+                        <input type="hidden" id="resellerId">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Usuario Reseller</label>
+                                <input type="text" id="resellerUser" class="form-control" required placeholder="Ej. juan_ventas">
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <input type="text" id="resellerPass" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Créditos Asignados (Saldo)</label>
+                                <input type="number" id="resellerCredits" class="form-control" required min="0" value="0">
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button type="submit" id="btnGuardarReseller" class="btn-primary">💾 Guardar Reseller</button>
+                            <button type="button" class="btn-secondary" onclick="resetResellerForm()">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>👥 Resellers Activos</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Contraseña</th>
+                                    <th>Créditos Restantes</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resellersTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA SERVIDORES -->
+            <div id="view-servers" class="content-view">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>🖥️ Servidores Detectados</h3>
+                    </div>
+                    <div id="servers-list-container">
+                        <p style="color: var(--text-muted);">No hay servidores cargados.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA AJUSTES -->
+            <div id="view-settings" class="content-view">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>⚙️ Ajustes del Sistema</h3>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" checked disabled> Inyección directa a Firebase habilitada
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" checked disabled> Autenticación segura unificada activa
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        let cuentasData = [];
+        let lineasCreadas = [];
+        let resellersData = [];
+        let m3uListsData = []; 
+        
+        let modoEdicion = false;
+        let lineaEdicionActual = null;
+        let listaActivaEnChecker = null; 
+        
+        let currentUserRole = null; 
+        let currentResellerData = null; 
+
+        // INICIALIZACIÓN FECHA MANUAL AL ABRIR LA PÁGINA
+        document.addEventListener("DOMContentLoaded", () => {
+            actualizarFechaManual();
+        });
+
+        // =======================
+        // LÓGICA DE AUTENTICACIÓN
+        // =======================
+        
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserRole = 'admin';
+                currentResellerData = null;
+                mostrarPanelUI();
+            } else {
+                const savedReseller = sessionStorage.getItem('firevod_reseller_session');
+                if (savedReseller) {
+                    try {
+                        const rData = JSON.parse(savedReseller);
+                        const snap = await database.ref('resellers/' + rData.id).once('value');
+                        if (snap.exists()) {
+                            currentUserRole = 'reseller';
+                            currentResellerData = { id: snap.key, ...snap.val() };
+                            mostrarPanelUI();
+                            return;
+                        }
+                    } catch(e) {
+                        sessionStorage.removeItem('firevod_reseller_session');
+                    }
+                }
+                mostrarLoginUI();
+            }
+        });
+
+        async function iniciarSesion(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.textContent = "⏳ Verificando...";
+
+            const userOrEmail = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            
+            if (userOrEmail.includes('@')) {
+                auth.signInWithEmailAndPassword(userOrEmail, pass)
+                    .then(() => {
+                        document.getElementById('loginForm').reset();
+                    })
+                    .catch((error) => {
+                        alert("❌ Error de acceso Admin: " + error.message);
+                        resetLoginBtn(btn);
+                    });
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref('resellers').once('value');
+                let foundReseller = null;
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const r = child.val();
+                        if (r.usuario === userOrEmail && r.password === pass) {
+                            foundReseller = { id: child.key, ...r };
+                        }
+                    });
+                }
+
+                if (foundReseller) {
+                    currentUserRole = 'reseller';
+                    currentResellerData = foundReseller;
+                    sessionStorage.setItem('firevod_reseller_session', JSON.stringify(foundReseller));
+                    document.getElementById('loginForm').reset();
+                    mostrarPanelUI();
+                } else {
+                    auth.signInWithEmailAndPassword(userOrEmail, pass).catch(() => {
+                        alert("❌ Usuario o contraseña incorrectos.");
+                        resetLoginBtn(btn);
+                    });
+                }
+            } catch (err) {
+                console.error("Error en login:", err);
+                alert("❌ Error al conectar con la base de datos.");
+                resetLoginBtn(btn);
+            }
+        }
+
+        function resetLoginBtn(btn) {
+            btn.disabled = false;
+            btn.textContent = "Ingresar al Panel";
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem('firevod_reseller_session');
+            currentUserRole = null;
+            currentResellerData = null;
+            auth.signOut().then(() => mostrarLoginUI());
+        }
+
+        function mostrarLoginUI() {
+            currentUserRole = null;
+            currentResellerData = null;
+            cuentasData = [];
+            lineasCreadas = [];
+            resellersData = [];
+            m3uListsData = [];
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('sidebar').classList.add('hidden');
+            document.getElementById('main-wrapper').classList.add('hidden');
+        }
+
+        function mostrarPanelUI() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('main-wrapper').classList.remove('hidden');
+            
+            aplicarRestriccionesDeRol();
+            
+            if(!modoEdicion) {
+                generarPinAcceso();
+                actualizarFechaManual();
+            }
+            inicializarEscuchaFirebase();
+        }
+
+        function aplicarRestriccionesDeRol() {
+            const isReseller = (currentUserRole === 'reseller');
+            const roleBadge = document.getElementById('role-badge');
+
+            document.getElementById('nav-item-resellers').style.display = isReseller ? 'none' : 'block';
+            document.getElementById('nav-item-servers').style.display = isReseller ? 'none' : 'block';
+            document.getElementById('nav-item-m3u-lists').style.display = isReseller ? 'none' : 'block'; 
+            document.getElementById('admin-dashboard-upload').style.display = isReseller ? 'none' : 'block';
+            document.getElementById('admin-advanced-sections').style.display = isReseller ? 'none' : 'contents';
+            
+            if (isReseller) {
+                roleBadge.textContent = "[Reseller]";
+                roleBadge.style.color = "var(--warning)";
+                document.getElementById('stat-total-title').textContent = "Tus Créditos (Meses)";
+                document.getElementById('stat-total').textContent = currentResellerData.creditos;
+                document.getElementById('stat-servers-card').style.display = 'none';
+            } else {
+                roleBadge.textContent = "[Administrador]";
+                roleBadge.style.color = "var(--success)";
+                document.getElementById('stat-total-title').textContent = "Cuentas Xtream Cargadas";
+                document.getElementById('stat-servers-card').style.display = 'block';
+            }
+
+            cambiarVista('view-dashboard', document.querySelector('[data-target="view-dashboard"] a'));
+        }
+
+        // =======================
+        // SINCRONIZACIÓN FIREBASE
+        // =======================
+
+        function inicializarEscuchaFirebase() {
+            const statusEl = document.getElementById('firebase-status');
+            
+            if (currentUserRole === 'admin') {
+                database.ref('resellers').on('value', (snapshot) => {
+                    resellersData = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach(child => {
+                            resellersData.push({ id: child.key, ...child.val() });
+                        });
+                    }
+                    renderizarTablaResellers();
+                });
+            } else {
+                database.ref('resellers/' + currentResellerData.id).on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        currentResellerData = { id: snapshot.key, ...snapshot.val() };
+                        document.getElementById('stat-total').textContent = currentResellerData.creditos;
+                        sessionStorage.setItem('firevod_reseller_session', JSON.stringify(currentResellerData));
+                    }
+                });
+            }
+
+            database.ref('m3u_lists').on('value', (snapshot) => {
+                m3uListsData = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        m3uListsData.push({ id: child.key, ...child.val() });
+                    });
+                }
+                actualizarSelectorListasM3u(); 
+                if (currentUserRole === 'admin') renderizarTablaListasM3u();
+            });
+
+            database.ref('lineas').on('value', (snapshot) => {
+                lineasCreadas = [];
+                const data = snapshot.val();
+                if (data) {
+                    Object.keys(data).forEach(pinKey => {
+                        const item = data[pinKey];
+                        if (currentUserRole === 'admin' || item.creador === currentResellerData.usuario) {
+                            lineasCreadas.push({ ...item, pin: item.pin || pinKey });
+                        }
+                    });
+                }
+                document.getElementById('stat-clientes').textContent = lineasCreadas.length;
+                verificarYActualizarEstados();
+                renderizarTablaClientes();
+                statusEl.textContent = "Conectado / Sincronizado";
+                statusEl.style.color = "var(--success)";
+            }, (error) => {
+                console.error("Error en lectura DB:", error);
+                statusEl.textContent = "Error de Conexión";
+                statusEl.style.color = "var(--danger)";
+            });
+
+            database.ref('servidores').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    cuentasData = Array.isArray(data) ? data : Object.values(data);
+                } else {
+                    cuentasData = [];
+                }
+                
+                if (currentUserRole === 'admin') {
+                    document.getElementById('stat-total').textContent = cuentasData.length;
+                    const servidoresUnicos = new Set();
+                    cuentasData.forEach(c => { if(c && c.servidor && c.servidor !== "N/A") servidoresUnicos.add(c.servidor); });
+                    document.getElementById('stat-servers').textContent = servidoresUnicos.size;
+                    renderizarTablaXtream(cuentasData);
+                    actualizarVistaServidores();
+                    actualizarSelectorServidores();
+                }
+            });
+
+            setInterval(() => {
+                if (lineasCreadas.length > 0) verificarYActualizarEstados();
+            }, 30000);
+        }
+
+        function verificarYActualizarEstados() {
+            const ahora = Date.now();
+            lineasCreadas.forEach(linea => {
+                if (linea.vencimientoTimestamp && !linea.bloqueado) {
+                    if (ahora >= linea.vencimientoTimestamp) {
+                        if (linea.estado !== "BLOQUEADO" || linea.sesionActiva !== false) {
+                            linea.estado = "BLOQUEADO";
+                            linea.bloqueado = true;
+                            linea.sesionActiva = false;
+                            linea.mensajeEstado = "Tu cuenta está vencida y ha sido bloqueada.";
+                            database.ref('lineas/' + linea.pin).update({
+                                estado: "BLOQUEADO",
+                                bloqueado: true,
+                                sesionActiva: false,
+                                mensajeEstado: "Tu cuenta está vencida y ha sido bloqueada."
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // FUNCIONES DE LISTAS M3U (CHECKER EN VIVO)
+        // ==========================================
+
+        async function guardarListaM3u(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuardarListaM3u');
+            btn.disabled = true;
+            btn.textContent = "⏳ Guardando...";
+
+            try {
+                const id = document.getElementById('m3uListId').value || `list_${Date.now()}`;
+                const name = document.getElementById('m3uListName').value.trim();
+                const content = document.getElementById('m3uListContent').value.trim();
+
+                await database.ref('m3u_lists/' + id).set({
+                    nombre: name,
+                    contenido: content,
+                    timestamp: Date.now()
+                });
+
+                resetM3uListForm();
+                alert("✅ Lista M3U guardada correctamente.");
+            } catch (err) {
+                console.error("Error guardando lista:", err);
+                alert("❌ Ocurrió un error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "💾 Guardar Lista";
+            }
+        }
+
+        function resetM3uListForm() {
+            document.getElementById('createM3uListForm').reset();
+            document.getElementById('m3uListId').value = '';
+        }
+
+        function editarListaM3u(id) {
+            const list = m3uListsData.find(x => x.id === id);
+            if(list) {
+                document.getElementById('m3uListId').value = list.id;
+                document.getElementById('m3uListName').value = list.nombre;
+                document.getElementById('m3uListContent').value = list.contenido;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function eliminarListaM3u(id) {
+            if(confirm("⚠️ ¿Estás seguro de eliminar esta lista permanentemente?")) {
+                database.ref('m3u_lists/' + id).remove();
+            }
+        }
+
+        // FUNCIÓN DEL BOTÓN CHECKER EN VIVO PARA NOTAS DE PLAYLIST
+        function chekarListaM3uEnVivo(id) {
+            const list = m3uListsData.find(x => x.id === id);
+            if (!list || !list.contenido) {
+                alert("⚠️ Esta lista está vacía.");
+                return;
+            }
+
+            listaActivaEnChecker = list;
+            const lines = list.contenido.split(/\r?\n/);
+            let resultados = [];
+            let activasCount = 0;
+            let vencidasCount = 0;
+
+            lines.forEach((line) => {
+                let trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#') || trimmed.includes('===')) return;
+
+                let lowerLine = trimmed.toLowerCase();
+                let estado = "ACTIVA";
+                let badgeClass = "badge-success";
+
+                if (
+                    lowerLine.includes('vencida') || 
+                    lowerLine.includes('caducada') || 
+                    lowerLine.includes('inactiva') || 
+                    lowerLine.includes('expired') || 
+                    lowerLine.includes('status: 0') || 
+                    lowerLine.includes('disabled')
+                ) {
+                    estado = "VENCIDA / INACTIVA";
+                    badgeClass = "badge-danger";
+                    vencidasCount++;
+                } else {
+                    activasCount++;
+                }
+
+                let servidor = "N/A", usuario = "N/A";
+                const urlMatch = trimmed.match(/(?:URL:\s*|http[s]?:\/\/)([^:\/\s]+:\d+|[^\s|,;"]+)/i);
+                if (urlMatch) servidor = urlMatch[0].replace(/^URL:\s*/i, '').trim();
+
+                const userMatch = trimmed.match(/(?:User|Usuario|Username):\s*([^\s|,;"]+)/i) || trimmed.match(/username=([^\s&]+)/i);
+                if (userMatch) usuario = userMatch[1].trim();
+
+                if (usuario === "N/A") {
+                    const partes = trimmed.split(/[\s,|;]+/);
+                    if (partes.length >= 2) usuario = partes[1];
+                }
+
+                resultados.push({
+                    usuario: usuario,
+                    servidor: servidor,
+                    estado: estado,
+                    badge: badgeClass,
+                    lineaOriginal: trimmed
+                });
+            });
+
+            // Mostrar Panel Checker
+            const panel = document.getElementById('checkerResultPanel');
+            panel.style.display = 'block';
+            document.getElementById('checkerTitle').textContent = `🔍 Reporte en Vivo: ${list.nombre}`;
+            
+            const summary = document.getElementById('checkerSummary');
+            summary.innerHTML = `✅ Cuentas Activas: <span style="color:var(--success);">${activasCount}</span> | 🚫 Cuentas Vencidas/Inactivas Detectadas: <span style="color:var(--danger);">${vencidasCount}</span>`;
+
+            const tbody = document.getElementById('checkerTableBody');
+            tbody.innerHTML = '';
+            
+            if (resultados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No se encontraron cuentas estructuradas en esta lista.</td></tr>`;
+            } else {
+                resultados.forEach((res, idx) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${idx + 1}</td>
+                            <td><strong>${escapeHTML(res.usuario)}</strong></td>
+                            <td class="server-tag">${escapeHTML(res.servidor)}</td>
+                            <td><span class="badge ${res.badge}">${res.estado}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const btnLimpiar = document.getElementById('btnLimpiarListaAuto');
+            if (vencidasCount > 0) {
+                btnLimpiar.style.display = 'inline-block';
+            } else {
+                btnLimpiar.style.display = 'none';
+            }
+
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cerrarPanelChecker() {
+            document.getElementById('checkerResultPanel').style.display = 'none';
+            listaActivaEnChecker = null;
+        }
+
+        async function ejecutarLimpiezaLista() {
+            if (!listaActivaEnChecker) return;
+            if (!confirm(`⚠️ ¿Estás seguro de limpiar esta lista?\nSe eliminarán permanentemente todas las líneas de cuentas marcadas como vencidas o inactivas en las notas de "${listaActivaEnChecker.nombre}".`)) {
+                return;
+            }
+
+            const lines = listaActivaEnChecker.contenido.split(/\r?\n/);
+            let lineasLimpias = [];
+
+            lines.forEach((line) => {
+                let trimmed = line.trim();
+                let lowerLine = trimmed.toLowerCase();
+
+                if (
+                    trimmed && 
+                    !trimmed.startsWith('#') && 
+                    !trimmed.includes('===') && (
+                        lowerLine.includes('vencida') || 
+                        lowerLine.includes('caducada') || 
+                        lowerLine.includes('inactiva') || 
+                        lowerLine.includes('expired') || 
+                        lowerLine.includes('status: 0') || 
+                        lowerLine.includes('disabled')
+                    )
+                ) {
+                    return; // Excluir cuenta vencida
+                }
+                lineasLimpias.push(line);
+            });
+
+            const nuevoContenido = lineasLimpias.join('\n');
+
+            try {
+                await database.ref('m3u_lists/' + listaActivaEnChecker.id).update({
+                    contenido: nuevoContenido,
+                    timestamp: Date.now()
+                });
+                alert("✅ ¡Lista limpiada con éxito! Se han removido las cuentas vencidas.");
+                cerrarPanelChecker();
+            } catch (err) {
+                console.error("Error limpiando lista:", err);
+                alert("❌ Error al actualizar la lista en Firebase: " + err.message);
+            }
+        }
+
+        function renderizarTablaListasM3u() {
+            const tbody = document.getElementById('m3uListsTable');
+            tbody.innerHTML = '';
+            if (m3uListsData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 30px;">No hay listas guardadas.</td></tr>`;
+                return;
+            }
+            m3uListsData.forEach(list => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHTML(list.nombre)}</strong></td>
+                    <td>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn-secondary btn-success" onclick="chekarListaM3uEnVivo('${list.id}')">🔍 Checar Cuentas (En Vivo)</button>
+                            <button type="button" class="btn-secondary btn-warning" onclick="editarListaM3u('${list.id}')">✏️ Editar</button>
+                            <button type="button" class="btn-secondary btn-danger" onclick="eliminarListaM3u('${list.id}')">🗑️ Borrar</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarSelectorListasM3u() {
+            const select = document.getElementById('selectedM3uListClient');
+            if (!select) return;
+            let options = '<option value="">-- Ninguna (Usar servidor por defecto) --</option>';
+            m3uListsData.forEach(list => {
+                options += `<option value="${escapeHTML(list.nombre)}">${escapeHTML(list.nombre)}</option>`;
+            });
+            select.innerHTML = options;
+        }
+
+        // Analizador inteligente: solo extrae cuentas que estén activas y descarta las vencidas/inactivas
+        function extraerCuentasDeTexto(rawText) {
+            const lines = rawText.split(/\r?\n/); 
+            let cuentasEncontradas = [];
+
+            lines.forEach((line) => {
+                let trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#') || trimmed.includes('===')) return;
+
+                let lowerLine = trimmed.toLowerCase();
+
+                if (
+                    lowerLine.includes('vencida') || 
+                    lowerLine.includes('caducada') || 
+                    lowerLine.includes('inactiva') || 
+                    lowerLine.includes('expired') || 
+                    lowerLine.includes('status: 0') || 
+                    lowerLine.includes('disabled')
+                ) {
+                    return; 
+                }
+
+                let servidor = "N/A", usuario = "N/A", password = "N/A";
+
+                const urlMatch = trimmed.match(/(?:URL:\s*|http[s]?:\/\/)([^:\/\s]+:\d+|[^\s|,;"]+)/i);
+                if (urlMatch) { 
+                    let extracted = urlMatch[0].replace(/^URL:\s*/i, '').trim(); 
+                    servidor = extracted.startsWith('http') ? extracted : 'http://' + extracted; 
+                }
+
+                const userMatch = trimmed.match(/(?:User|Usuario|Username):\s*([^\s|,;"]+)/i) || trimmed.match(/username=([^\s&]+)/i); 
+                if (userMatch) {
+                    usuario = userMatch[1].trim();
+                }
+
+                const passMatch = trimmed.match(/(?:Pass|Password|Contraseña):\s*([^\s|,;"]+)/i) || trimmed.match(/password=([^\s&]+)/i); 
+                if (passMatch) {
+                    password = passMatch[1].trim();
+                }
+
+                if (usuario === "N/A" || password === "N/A") {
+                    const partes = trimmed.split(/[\s,|;]+/);
+                    partes.forEach(p => {
+                        if (p.toLowerCase().startsWith('http') && servidor === "N/A") {
+                            servidor = p;
+                        }
+                    });
+                    if (partes.length >= 3 && servidor !== "N/A") {
+                        if (usuario === "N/A") usuario = partes[1];
+                        if (password === "N/A") password = partes[2];
+                    }
+                }
+
+                if (usuario !== "N/A" && password !== "N/A" && servidor !== "N/A") {
+                    cuentasEncontradas.push({ usuario, password, servidor });
+                }
+            });
+
+            return cuentasEncontradas;
+        }
+
+        // ==========================================
+        // FUNCIONES DE RESELLERS (PANEL DEL ADMIN)
+        // ==========================================
+
+        async function guardarReseller(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuardarReseller');
+            btn.disabled = true;
+            btn.textContent = "⏳ Guardando...";
+
+            try {
+                const id = document.getElementById('resellerId').value || `res_${Date.now()}`;
+                const user = document.getElementById('resellerUser').value.trim();
+                const pass = document.getElementById('resellerPass').value.trim();
+                const credits = parseInt(document.getElementById('resellerCredits').value) || 0;
+
+                if (!user || !pass) {
+                    alert("⚠️ Por favor ingresa el usuario y contraseña del Reseller.");
+                    resetResellerBtn(btn);
+                    return;
+                }
+
+                await database.ref('resellers/' + id).set({
+                    usuario: user,
+                    password: pass,
+                    creditos: credits,
+                    timestamp: Date.now()
+                });
+
+                resetResellerForm();
+                alert("✅ ¡Reseller guardado correctamente en la base de datos!");
+            } catch (err) {
+                console.error("Error guardando reseller:", err);
+                alert("❌ Ocurrió un error al guardar al reseller: " + err.message);
+            } finally {
+                resetResellerBtn(btn);
+            }
+        }
+
+        function resetResellerBtn(btn) {
+            btn.disabled = false;
+            btn.textContent = "💾 Guardar Reseller";
+        }
+
+        function resetResellerForm() {
+            document.getElementById('createResellerForm').reset();
+            document.getElementById('resellerId').value = '';
+        }
+
+        function editarReseller(id) {
+            const r = resellersData.find(x => x.id === id);
+            if(r) {
+                document.getElementById('resellerId').value = r.id;
+                document.getElementById('resellerUser').value = r.usuario;
+                document.getElementById('resellerPass').value = r.password;
+                document.getElementById('resellerCredits').value = r.creditos;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function eliminarReseller(id) {
+            if(confirm("⚠️ ¿Estás seguro de eliminar este reseller permanentemente?")) {
+                database.ref('resellers/' + id).remove();
+            }
+        }
+
+        function renderizarTablaResellers() {
+            const tbody = document.getElementById('resellersTable');
+            tbody.innerHTML = '';
+            if (resellersData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">No hay resellers registrados.</td></tr>`;
+                return;
+            }
+            resellersData.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHTML(r.usuario)}</strong></td>
+                    <td class="pass-cell">${escapeHTML(r.password)}</td>
+                    <td><span class="badge badge-info" style="font-size:14px;">${escapeHTML(r.creditos)}</span></td>
+                    <td>
+                        <button type="button" class="btn-secondary btn-warning" onclick="editarReseller('${r.id}')">✏️ Editar</button>
+                        <button type="button" class="btn-secondary btn-danger" onclick="eliminarReseller('${r.id}')">🗑️ Borrar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+
+        // ==========================================
+        // FUNCIONES DE CLIENTES Y FECHAS
+        // ==========================================
+
+        function formatearFechaConMes(fecha) {
+            const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = meses[fecha.getMonth()];
+            const anio = fecha.getFullYear();
+            const horas = String(fecha.getHours()).padStart(2, '0');
+            const minutos = String(fecha.getMinutes()).padStart(2, '0');
+            
+            return `${dia} de ${mes} de ${anio}, ${horas}:${minutos}`;
+        }
+
+        function actualizarFechaManual() {
+            const duracion = document.getElementById('newDuration').value;
+            let baseDate = new Date();
+
+            if (modoEdicion && duracion === 'keep' && lineaEdicionActual && lineaEdicionActual.vencimientoTimestamp) {
+                baseDate = new Date(lineaEdicionActual.vencimientoTimestamp);
+            } else {
+                if (duracion === '2h') baseDate.setHours(baseDate.getHours() + 2);
+                else if (duracion === '1m') baseDate.setMonth(baseDate.getMonth() + 1);
+                else if (duracion === '3m') baseDate.setMonth(baseDate.getMonth() + 3);
+                else if (duracion === '6m') baseDate.setMonth(baseDate.getMonth() + 6);
+                else if (duracion === '12m') baseDate.setFullYear(baseDate.getFullYear() + 1);
+            }
+
+            const year = baseDate.getFullYear();
+            const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+            const day = String(baseDate.getDate()).padStart(2, '0');
+            const hours = String(baseDate.getHours()).padStart(2, '0');
+            const minutes = String(baseDate.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('manualVencimiento').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function calcularCostoCreditosPorFecha(fechaSeleccionadaMs) {
+            const ahoraMs = Date.now();
+            const diferenciaMs = fechaSeleccionadaMs - ahoraMs;
+            if (diferenciaMs <= 0) return 0;
+
+            const unMesMs = 30 * 24 * 60 * 60 * 1000;
+            const mesesAprox = Math.round(diferenciaMs / unMesMs);
+
+            if (diferenciaMs < 6.5 * 3600 * 1000) {
+                const duracionSelect = document.getElementById('newDuration').value;
+                if (duracionSelect === '2h') return 0;
+            }
+
+            return Math.max(1, mesesAprox);
+        }
+
+        async function guardarOActualizarLinea(e) {
+            e.preventDefault();
+            const statusMsg = document.getElementById('form-status-msg');
+
+            const usuario = document.getElementById('newUser').value.trim();
+            const pass = document.getElementById('newPass').value.trim();
+            const pin = document.getElementById('newPin').value.trim();
+            const duracion = document.getElementById('newDuration').value;
+            const listaAsignada = document.getElementById('selectedM3uListClient').value; 
+            const creador = currentUserRole === 'admin' ? 'admin' : currentResellerData.usuario;
+            
+            let m3uCrudo = document.getElementById('newM3u').value.trim();
+            let backupM3u = document.getElementById('backupM3u').value.trim();
+            let dropboxUrl = document.getElementById('newDropboxUrl').value.trim();
+            let backupDropboxUrl = document.getElementById('backupDropboxUrl').value.trim();
+
+            let manualServer = document.getElementById('newServerUrl').value.trim().replace(/\/+$/, ""); 
+            let manualXtreamUser = document.getElementById('newXtreamUser').value.trim();
+            let manualXtreamPass = document.getElementById('newXtreamPass').value.trim();
+
+            if (listaAsignada) {
+                const listaEncontrada = m3uListsData.find(l => l.nombre === listaAsignada);
+                if (listaEncontrada && listaEncontrada.contenido) {
+                    const cuentasExtraidas = extraerCuentasDeTexto(listaEncontrada.contenido);
+                    if (cuentasExtraidas.length > 0) {
+                        const cuentaAleatoria = cuentasExtraidas[Math.floor(Math.random() * cuentasExtraidas.length)];
+                        manualServer = cuentaAleatoria.servidor;
+                        manualXtreamUser = cuentaAleatoria.usuario;
+                        manualXtreamPass = cuentaAleatoria.password;
+                    } else {
+                        alert("⚠️ La lista seleccionada no contiene cuentas Xtream ACTIVAS válidas en sus notas (todas parecen estar vencidas o sin formato correcto).");
+                        return;
+                    }
+                } else {
+                    alert("⚠️ No se encontró el contenido de la lista seleccionada.");
+                    return;
+                }
+            }
+
+            const inputVal = document.getElementById('manualVencimiento').value;
+            if (!inputVal) {
+                alert("⚠️ Por favor revisa la fecha de vencimiento.");
+                return;
+            }
+            const fechaSeleccionada = new Date(inputVal);
+            const vencimientoTimestamp = fechaSeleccionada.getTime();
+
+            let costoCreditos = 0;
+            if (currentUserRole === 'reseller') {
+                if (duracion === '2h') {
+                    costoCreditos = 0;
+                } else if (duracion === 'keep') {
+                    costoCreditos = 0;
+                } else {
+                    costoCreditos = calcularCostoCreditosPorFecha(vencimientoTimestamp);
+                }
+
+                if (costoCreditos > 0 && duracion !== 'keep') {
+                    if (currentResellerData.creditos < costoCreditos) {
+                        alert(`❌ No tienes suficientes créditos. Esta operación requiere ${costoCreditos} crédito(s) y tienes ${currentResellerData.creditos}.`);
+                        return;
+                    }
+
+                    const confirmar = confirm(`⚠️ Confirmación de Créditos\n\nEsta operación tendrá un costo de ${costoCreditos} crédito(s) (por ${costoCreditos} mes(es) asignados).\n¿Estás seguro de continuar?`);
+                    if (!confirmar) {
+                        return;
+                    }
+                }
+
+                if (duracion === '2h') {
+                    const yaTuvoPrueba = lineasCreadas.some(l => 
+                        l.creador === currentResellerData.usuario && 
+                        l.usuarioCliente.toLowerCase() === usuario.toLowerCase() && 
+                        l.esPrueba === true &&
+                        (!modoEdicion || (modoEdicion && l.pin !== pin))
+                    );
+                    if (yaTuvoPrueba) {
+                        alert("❌ Denegado: Este cliente ya ha recibido una prueba de 2 horas.");
+                        return;
+                    }
+                }
+
+                if (modoEdicion && !listaAsignada) {
+                    manualServer = lineaEdicionActual.serverUrl;
+                    manualXtreamUser = lineaEdicionActual.xtreamUser;
+                    manualXtreamPass = lineaEdicionActual.xtreamPass;
+                } else if (!listaAsignada) {
+                    if (cuentasData.length === 0) {
+                        alert("❌ No hay servidores disponibles en el sistema. Contacta al Administrador.");
+                        return;
+                    }
+                    const srvA = cuentasData[Math.floor(Math.random() * cuentasData.length)];
+                    manualServer = srvA.servidor;
+                    manualXtreamUser = srvA.usuario;
+                    manualXtreamPass = srvA.password;
+                }
+            }
+
+            statusMsg.innerHTML = "⏳ <strong>Procesando y guardando datos...</strong>";
+
+            if (dropboxUrl) {
+                let contenidoRemoto = await obtenerContenidoRemoto(dropboxUrl);
+                if (contenidoRemoto) m3uCrudo = contenidoRemoto;
+            }
+            if (backupDropboxUrl) {
+                let contenidoBackupRemoto = await obtenerContenidoRemoto(backupDropboxUrl);
+                if (contenidoBackupRemoto) backupM3u = contenidoBackupRemoto;
+            }
+
+            const serverUrlFinal = manualServer || 'Personalizado / M3U';
+            const xtreamUserFinal = manualXtreamUser || 'N/A';
+            const xtreamPassFinal = manualXtreamPass || 'N/A';
+
+            const hideLiveMain = document.getElementById('hideLiveMain').checked;
+            const hideVodMain = document.getElementById('hideVodMain').checked;
+            const hideSeriesMain = document.getElementById('hideSeriesMain').checked;
+            const hideLiveBackup = document.getElementById('hideLiveBackup').checked;
+            const hideVodBackup = document.getElementById('hideVodBackup').checked;
+            const hideSeriesBackup = document.getElementById('hideSeriesBackup').checked;
+            const mergeTotalContent = document.getElementById('mergeTotalContent').checked;
+            const bloquearAcceso = document.getElementById('bloquearAcceso').checked;
+
+            let principalFiltrado = filtrarTextoM3u(m3uCrudo, hideLiveMain, hideVodMain, hideSeriesMain);
+            let respaldoFiltrado = filtrarTextoM3u(backupM3u, hideLiveBackup, hideVodBackup, hideSeriesBackup);
+
+            let m3uFinalCombinado = "#EXTM3U\n";
+            if (principalFiltrado) m3uFinalCombinado += principalFiltrado.replace(/#EXTM3U\s*/gi, '') + "\n";
+            if (mergeTotalContent && respaldoFiltrado) m3uFinalCombinado += respaldoFiltrado.replace(/#EXTM3U\s*/gi, '') + "\n";
+
+            let vencimientoData = {
+                timestamp: vencimientoTimestamp,
+                fechaTexto: formatearFechaConMes(fechaSeleccionada)
+            };
+
+            let esPruebaFinal = false;
+            if (modoEdicion && duracion === 'keep') {
+                esPruebaFinal = lineaEdicionActual.esPrueba || false;
+            } else {
+                esPruebaFinal = (duracion === '2h');
+            }
+
+            const ahoraMs = Date.now();
+            const estaVencido = ahoraMs >= vencimientoData.timestamp;
+
+            let estadoCalculado = "ACTIVO", mensajeEstadoCalculado = "OK", sesionActiva = true, bloqueadoFinal = false;
+            if (bloquearAcceso || estaVencido) { 
+                estadoCalculado = "BLOQUEADO"; 
+                bloqueadoFinal = true;
+                mensajeEstadoCalculado = bloquearAcceso ? "Tu cuenta está bloqueada." : "Tu cuenta está vencida."; 
+                sesionActiva = false; 
+            }
+
+            const datosLinea = {
+                pin: pin,
+                usuarioCliente: usuario,
+                passCliente: pass,
+                serverUrl: serverUrlFinal,
+                xtreamUser: xtreamUserFinal,
+                xtreamPass: xtreamPassFinal,
+                url: serverUrlFinal, dns: serverUrlFinal,
+                username: xtreamUserFinal, user: xtreamUserFinal,
+                password: xtreamPassFinal, pass: xtreamPassFinal,
+                m3u: m3uFinalCombinado,
+                m3uCrudo: m3uCrudo,
+                dropboxUrl: dropboxUrl,
+                backupM3u: backupM3u,
+                backupDropboxUrl: backupDropboxUrl,
+                m3uFinal: m3uFinalCombinado,
+                hideLiveMain: hideLiveMain,
+                hideVodMain: hideVodMain,
+                hideSeriesMain: hideSeriesMain,
+                hideLiveBackup: hideLiveBackup,
+                hideVodBackup: hideVodBackup,
+                hideSeriesBackup: hideSeriesBackup,
+                mergeTotalContent: mergeTotalContent,
+                bloqueado: bloqueadoFinal,
+                vencimiento: vencimientoData.fechaTexto,
+                vencimientoTimestamp: vencimientoData.timestamp,
+                estado: estadoCalculado,
+                mensajeEstado: mensajeEstadoCalculado,
+                sesionActiva: sesionActiva,
+                esPrueba: esPruebaFinal,
+                listaAsignada: listaAsignada, 
+                creador: creador, 
+                timestampUltimaModificacion: Date.now()
+            };
+
+            try {
+                if (currentUserRole === 'reseller' && costoCreditos > 0 && duracion !== 'keep') {
+                    const nuevosCreditos = currentResellerData.creditos - costoCreditos;
+                    await database.ref('resellers/' + currentResellerData.id).update({ creditos: nuevosCreditos });
+                    currentResellerData.creditos = nuevosCreditos;
+                    document.getElementById('stat-total').textContent = nuevosCreditos;
+                    sessionStorage.setItem('firevod_reseller_session', JSON.stringify(currentResellerData));
+                }
+
+                await database.ref('lineas/' + pin).set(datosLinea);
+                resetearFormulario();
+                alert(modoEdicion ? `✅ ¡Línea actualizada correctamente!` : `✅ ¡Línea creada exitosamente!\nPIN: ${pin}`);
+            } catch (error) {
+                console.error("Error guardando línea:", error);
+                alert("❌ Error de guardado: " + error.message);
+            } finally {
+                statusMsg.innerHTML = "🔄 <strong>Sincronización en Firebase:</strong> Se guarda en tiempo real.";
+            }
+        }
+
+        function renderizarTablaClientes() {
+            const thead = document.getElementById('thead-clients');
+            const esAdmin = currentUserRole === 'admin';
+            
+            thead.innerHTML = `
+                <tr>
+                    <th>#</th>
+                    <th>Usuario Cliente</th>
+                    <th>Contraseña</th>
+                    <th>Código PIN</th>
+                    <th>Estado</th>
+                    ${esAdmin ? '<th>Creador</th>' : ''}
+                    <th>Asignación / Servidor</th>
+                    ${esAdmin ? '<th>Filtros M3U</th>' : ''}
+                    <th>Vencimiento</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+
+            const tbody = document.getElementById('clientsTable');
+            tbody.innerHTML = '';
+            if (lineasCreadas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${esAdmin ? 10 : 8}" style="text-align: center; color: var(--text-muted); padding: 25px;">No hay clientes registrados en tu cuenta.</td></tr>`;
+                return;
+            }
+
+            lineasCreadas.forEach((item, index) => {
+                if (!item) return;
+                const tr = document.createElement('tr');
+                
+                const htmlCreador = esAdmin ? `<td><span class="badge ${item.creador === 'admin' ? 'badge-success' : 'badge-warning'}">${escapeHTML(item.creador || 'admin')}</span></td>` : '';
+                
+                let htmlFiltros = '';
+                if (esAdmin) {
+                    let f = '<small>Prin: ';
+                    f += (item.hideLiveMain || item.hideVodMain || item.hideSeriesMain) ? '[Filtrado]' : 'Todo';
+                    f += ' | Resp: ';
+                    f += (item.hideLiveBackup || item.hideVodBackup || item.hideSeriesBackup) ? '[Filtrado]' : 'Todo';
+                    f += '</small>';
+                    htmlFiltros = `<td>${f}</td>`;
+                }
+
+                let cuentaInfo = '';
+                if (esAdmin) {
+                    let listaBadge = item.listaAsignada ? `<br><span class="badge badge-warning" style="margin-top:4px;">📂 ${escapeHTML(item.listaAsignada)}</span>` : '';
+                    cuentaInfo = `<span class="server-tag">${escapeHTML(item.serverUrl || 'N/A')}</span><br><small style="color:var(--text-muted);">Usr: ${escapeHTML(item.xtreamUser || 'N/A')}</small>${listaBadge}`;
+                } else {
+                    let listaBadge = item.listaAsignada ? `<br><small style="color:var(--warning);">Lista: ${escapeHTML(item.listaAsignada)}</small>` : '';
+                    cuentaInfo = `<span class="badge badge-info">✅ Asignado Oculto</span>${listaBadge}`;
+                }
+
+                let estadoPinBadge = '<span class="badge badge-success">✅ ACTIVO</span>';
+                if (item.bloqueado || item.estado === "BLOQUEADO") estadoPinBadge = '<span class="badge badge-danger">🚫 BLOQUEADO</span>';
+
+                tr.innerHTML = `
+                    <td>${String(index + 1).padStart(3, '0')}</td>
+                    <td><strong>${escapeHTML(item.usuarioCliente || 'Cliente')}</strong></td>
+                    <td class="pass-cell">${escapeHTML(item.passCliente || '******')}</td>
+                    <td class="pin-cell">🔑 ${escapeHTML(item.pin || index)}</td>
+                    <td>${estadoPinBadge}</td>
+                    ${htmlCreador}
+                    <td>${cuentaInfo}</td>
+                    ${htmlFiltros}
+                    <td>${escapeHTML(item.vencimiento || 'Sin definir')}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button type="button" class="btn-secondary btn-warning" style="padding: 5px 8px; font-size: 0.75rem;" onclick="cargarLineaParaEditar('${item.pin}')">✏️ Editar / Renovar</button>
+                            ${esAdmin ? `<button type="button" class="btn-secondary" style="padding: 5px 8px; font-size: 0.75rem; background: var(--accent);" onclick="copiarM3uFinal('${item.pin}')">📋 M3U</button>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function cargarLineaParaEditar(pin) {
+            const linea = lineasCreadas.find(l => String(l.pin) === String(pin));
+            if (!linea) { alert("⚠️ No se pudo encontrar la información."); return; }
+
+            modoEdicion = true;
+            lineaEdicionActual = linea;
+
+            document.getElementById('form-title-text').textContent = `✏️ Editando Línea (PIN: ${pin})`;
+            document.getElementById('btnCancelarEdicion').style.display = 'inline-block';
+            document.getElementById('btnSubmitForm').textContent = '💾 Actualizar / Renovar';
+
+            document.getElementById('newUser').value = linea.usuarioCliente || '';
+            document.getElementById('newPass').value = linea.passCliente || '';
+            document.getElementById('newPin').value = linea.pin || pin;
+            document.getElementById('newPin').readOnly = true;
+
+            const optKeep = document.getElementById('opt-keep');
+            optKeep.style.display = 'block';
+            optKeep.textContent = `🔒 Mantener fecha actual (${linea.vencimiento || 'Sin fecha'}) - Sin Costo`;
+            document.getElementById('newDuration').value = 'keep';
+            document.getElementById('label-duracion-nota').textContent = '(Elige otra opción si deseas agregar meses)';
+
+            actualizarFechaManual(); 
+
+            document.getElementById('selectedM3uListClient').value = linea.listaAsignada || ''; 
+            document.getElementById('bloquearAcceso').checked = linea.bloqueado || linea.estado === "BLOQUEADO";
+
+            if (currentUserRole === 'admin') {
+                document.getElementById('newServerUrl').value = linea.serverUrl !== 'Personalizado / M3U' ? linea.serverUrl : '';
+                document.getElementById('newXtreamUser').value = linea.xtreamUser !== 'N/A' ? linea.xtreamUser : '';
+                document.getElementById('newXtreamPass').value = linea.xtreamPass !== 'N/A' ? linea.xtreamPass : '';
+                document.getElementById('serverSelect').value = '';
+                
+                document.getElementById('newDropboxUrl').value = linea.dropboxUrl || '';
+                document.getElementById('newM3u').value = linea.m3uCrudo || '';
+                document.getElementById('backupDropboxUrl').value = linea.backupDropboxUrl || '';
+                document.getElementById('backupM3u').value = linea.backupM3u || '';
+
+                document.getElementById('hideLiveMain').checked = linea.hideLiveMain || false;
+                document.getElementById('hideVodMain').checked = linea.hideVodMain || false;
+                document.getElementById('hideSeriesMain').checked = linea.hideSeriesMain || false;
+                document.getElementById('hideLiveBackup').checked = linea.hideLiveBackup || false;
+                document.getElementById('hideVodBackup').checked = linea.hideVodBackup || false;
+                document.getElementById('hideSeriesBackup').checked = linea.hideSeriesBackup || false;
+                document.getElementById('mergeTotalContent').checked = linea.mergeTotalContent !== undefined ? linea.mergeTotalContent : true;
+            }
+
+            cambiarVista('view-lines', document.querySelector('[data-target="view-lines"] a'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetearFormulario() {
+            modoEdicion = false;
+            lineaEdicionActual = null;
+            document.getElementById('form-title-text').textContent = '➕ Crear Nueva Línea Cliente';
+            document.getElementById('btnCancelarEdicion').style.display = 'none';
+            document.getElementById('btnSubmitForm').textContent = '💾 Guardar y Activar Línea';
+            
+            const optKeep = document.getElementById('opt-keep');
+            optKeep.style.display = 'none';
+            document.getElementById('label-duracion-nota').textContent = '';
+            document.getElementById('newDuration').value = '1m';
+
+            document.getElementById('createLineForm').reset();
+            document.getElementById('newPin').readOnly = false;
+            document.getElementById('bloquearAcceso').checked = false;
+            document.getElementById('selectedM3uListClient').value = ''; 
+            if (currentUserRole === 'admin') document.getElementById('serverSelect').value = '';
+            
+            generarPinAcceso();
+            actualizarFechaManual(); 
+        }
+
+        // ==========================================
+        // FUNCIONES DE UTILIDAD GENERALES Y XTREAM
+        // ==========================================
+
+        function cambiarVista(viewId, element) {
+            document.querySelectorAll('.content-view').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            element.parentElement.classList.add('active');
+            
+            const titulos = {
+                'view-dashboard': 'Panel de Administración / Dashboard',
+                'view-lines': 'Crear y Gestionar Líneas de Clientes',
+                'view-m3u-lists': 'Gestión de Listas M3U (Cuentas Xtream)', 
+                'view-resellers': 'Gestión de Revendedores (Resellers)',
+                'view-servers': 'Servidores Xtream Base',
+                'view-settings': 'Ajustes del Sistema'
+            };
+            document.getElementById('nav-title').textContent = titulos[viewId];
+        }
+
+        function generarPinAcceso() { if (!modoEdicion) document.getElementById('newPin').value = Math.floor(100000 + Math.random() * 900000); }
+        function generarUsuarioAleatorio() { const pr = ['usr', 'client', 'fast', 'play', 'go']; document.getElementById('newUser').value = `${pr[Math.floor(Math.random()*pr.length)]}_${Math.floor(1000 + Math.random() * 9000)}`; }
+        function generarPasswordAleatorio() { const c = 'abcdefghijklmnopqrstuvwxyz0123456789'; let p = ''; for(let i=0; i<8; i++) p += c.charAt(Math.floor(Math.random() * c.length)); document.getElementById('newPass').value = p; }
+
+        // PARSEO DE SERVIDORES
+        document.getElementById('fileLoader').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('file-name').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function(event) { parsearContenido(event.target.result); };
+            reader.readAsText(file);
+        });
+
+        function parsearContenido(rawText) {
+            const lines = rawText.split(/\r?\n/); let cuentasNuevas = [];
+            lines.forEach((line) => {
+                let trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#') || trimmed.includes('===')) return;
+                let servidor = "N/A", usuario = "N/A", password = "N/A", vencimiento = "Sin fecha", conexiones = "1", estado = "Active";
+
+                const urlMatch = trimmed.match(/(?:URL:\s*|http[s]?:\/\/)([^:\/\s]+:\d+|[^\s|,;]+)/i);
+                if (urlMatch) { let extracted = urlMatch[0].replace(/^URL:\s*/i, '').trim(); servidor = extracted.startsWith('http') ? extracted : 'http://' + extracted; }
+                const userMatch = trimmed.match(/(?:User|Usuario):\s*([^\s|,;]+)/i); if (userMatch) usuario = userMatch[1].trim();
+                const passMatch = trimmed.match(/(?:Pass|Password|Contraseña):\s*([^\s|,;]+)/i); if (passMatch) password = passMatch[1].trim();
+                const estadoMatch = trimmed.match(/(?:Estado):\s*([^\s|,;]+)/i); if (estadoMatch) estado = estadoMatch[1].trim();
+                const venceMatch = trimmed.match(/(?:Vence|Vencimiento):\s*([^\s|,;]+)/i); if (venceMatch) vencimiento = venceMatch[1].trim();
+                const conexMatch = trimmed.match(/(?:Conexiones|Conexion):\s*(\d+)/i); if (conexMatch) conexiones = conexMatch[1].trim();
+
+                if (usuario !== "N/A" && password !== "N/A") cuentasNuevas.push({ id: cuentasNuevas.length + 1, usuario, password, servidor, vencimiento, conexiones, estado });
+            });
+            if(cuentasNuevas.length > 0) database.ref('servidores').set(cuentasNuevas).then(() => alert(`✅ ¡${cuentasNuevas.length} cuentas/servidores guardados!`));
+        }
+
+        function renderizarTablaXtream(data) {
+            const tbody = document.getElementById('accountsTable'); tbody.innerHTML = '';
+            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Sin cuentas.</td></tr>`; return; }
+            data.forEach((item, index) => {
+                if(!item) return; const tr = document.createElement('tr');
+                let badgeClass = item.estado.toLowerCase().includes('caducad') || item.estado.toLowerCase().includes('inactiv') ? 'badge-danger' : 'badge-success';
+                tr.innerHTML = `
+                    <td>${String(index + 1).padStart(3, '0')}</td>
+                    <td><strong>${escapeHTML(item.usuario)}</strong></td>
+                    <td class="pass-cell">${escapeHTML(item.password)}</td>
+                    <td class="server-tag">${escapeHTML(item.servidor)}</td>
+                    <td>${escapeHTML(item.vencimiento)}</td>
+                    <td><span class="badge badge-info">${escapeHTML(item.conexiones)}</span></td>
+                    <td><span class="badge ${badgeClass}">${escapeHTML(item.estado)}</span></td>
+                `; tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarVistaServidores() {
+            const container = document.getElementById('servers-list-container');
+            if (cuentasData.length === 0) { container.innerHTML = `<p style="color: var(--text-muted);">No hay servidores cargados.</p>`; return; }
+            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            cuentasData.forEach(cuenta => {
+                if(cuenta) {
+                    html += `
+                    <div style="background: var(--bg-dark); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: var(--info);">${escapeHTML(cuenta.servidor)}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">Usr: ${escapeHTML(cuenta.usuario)} | Vence: ${escapeHTML(cuenta.vencimiento)}</div>
+                        </div>
+                        <div><span class="badge badge-info">${escapeHTML(cuenta.conexiones)} Conex</span></div>
+                    </div>`;
+                }
+            }); container.innerHTML = html + '</div>';
+        }
+
+        function actualizarSelectorServidores() {
+            const select = document.getElementById('serverSelect');
+            let options = '<option value="">-- Escribe manualmente abajo o selecciona uno de la lista --</option>';
+            cuentasData.forEach((cuenta, idx) => {
+                if (cuenta && cuenta.servidor !== "N/A") options += `<option value="${idx}">🖥️ ${cuenta.servidor} | 👤 Usr: ${cuenta.usuario}</option>`;
+            }); select.innerHTML = options;
+        }
+
+        function inyectarServidorDropdown() {
+            const idx = document.getElementById('serverSelect').value;
+            if(idx !== "") {
+                document.getElementById('newServerUrl').value = cuentasData[idx].servidor;
+                document.getElementById('newXtreamUser').value = cuentasData[idx].usuario;
+                document.getElementById('newXtreamPass').value = cuentasData[idx].password;
+            } else {
+                document.getElementById('newServerUrl').value = ""; document.getElementById('newXtreamUser').value = ""; document.getElementById('newXtreamPass').value = "";
+            }
+        }
+
+        async function obtenerContenidoRemoto(url) {
+            if (!url) return '';
+            let urlOpt = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
+            try { let res = await fetch(urlOpt); if (res.ok) return await res.text(); } catch (e) {}
+            try { let proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOpt)}`; let res2 = await fetch(proxy); if (res2.ok) return await res2.text(); } catch (err) {}
+            return '';
+        }
+        function filtrarTextoM3u(texto, noLive, noVod, noSeries) {
+            if (!texto) return '';
+            const lineas = texto.split(/\r?\n/); let res = [], curInf = '', curExt = [];
+            for (let i = 0; i < lineas.length; i++) {
+                let l = lineas[i], low = l.toLowerCase();
+                if (low.startsWith('#extinf:')) {
+                    if (curInf && !debeOcultar(curInf, curExt, noLive, noVod, noSeries)) { res.push(curInf); res.push(...curExt); }
+                    curInf = l; curExt = [];
+                } else if (l.startsWith('#') && !low.startsWith('#extm3u')) { curExt.push(l);
+                } else if (l.trim() !== '') {
+                    curExt.push(l);
+                    if (curInf) { if (!debeOcultar(curInf, curExt, noLive, noVod, noSeries)) { res.push(curInf); res.push(...curExt); } curInf = ''; curExt = []; }
+                }
+            }
+            if (curInf && !debeOcultar(curInf, curExt, noLive, noVod, noSeries)) { res.push(curInf); res.push(...curExt); }
+            return res.join('\n');
+        }
+        function debeOcultar(inf, ext, noL, noV, noS) {
+            let t = (inf + ' ' + ext.join(' ')).toLowerCase();
+            let esS = t.includes('series') || t.includes('serie') || t.includes('season') || t.includes('temporada') || t.includes('/series/'); if (noS && esS) return true;
+            let esV = t.includes('pelicula') || t.includes('movie') || t.includes('vod') || t.includes('/movie/'); if (noV && esV) return true;
+            let esL = t.includes('/live/') || (!esS && !esV); if (noL && esL && !esS && !esV) return true;
+            return false;
+        }
+
+        function copiarM3uFinal(pin) {
+            const linea = lineasCreadas.find(l => String(l.pin) === String(pin));
+            navigator.clipboard.writeText(linea.m3uFinal || '').then(() => alert(`📋 ¡M3U copiado al portapapeles!`));
+        }
+        function escapeHTML(str) { return String(str).replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"'); }
+    </script>
+</body>
+</html>
